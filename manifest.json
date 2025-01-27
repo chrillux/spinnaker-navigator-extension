@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Spinnaker Navigation Extension",
+  "version": "1.0",
+  "description": "Adding navigation arrows to Spinnaker for easier navigation",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://spinnaker.quinyx.io/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://spinnaker.quinyx.io/*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ],
+  "options_page": "options.html",
+  "icons": {
+    "48": "spinnaker.svg"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "addon@example.com"
+    }
+  }
+}
