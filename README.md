@@ -1,7 +1,3 @@
-Here’s a `README.md` for your extension:
-
----
-
 # Spinnaker Navigator Extension
 
 Spinnaker Navigator is a browser extension that adds navigation arrows to Spinnaker application pages, allowing you to quickly jump between applications in a project. The extension works dynamically and only activates on the configured Spinnaker domain.
