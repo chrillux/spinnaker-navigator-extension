@@ -31,7 +31,8 @@ Spinnaker Navigator is a browser extension that adds navigation arrows to Spinna
    - In Firefox: Navigate to `about:addons`, find the Spinnaker Navigator extension, and click **Preferences**.
    - In Chrome: Go to `chrome://extensions/`, find the extension, and click **Details** → **Extension Options**.
 2. Enter your Spinnaker domain (e.g., `https://spinnaker.example.com`) and save.
-3. Navigate to your Spinnaker instance. The navigation arrows will appear on application pages (e.g., `/executions`).
+3. Update manifest.json content_scripts and host_permissions domain to point to your spinnaker domain, e.g "*://spinnaker.example.com/*"
+4. Navigate to your Spinnaker instance. The navigation arrows will appear on project -> application pages (e.g., `/executions`).
 
 ## Development
 
