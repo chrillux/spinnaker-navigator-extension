@@ -1,5 +1,4 @@
 (function () {
-  // Detect the appropriate storage API
   const storage = chrome?.storage?.sync || browser?.storage?.sync || chrome?.storage?.local || browser?.storage?.local;
 
   if (!storage) {
@@ -7,144 +6,94 @@
     return;
   }
 
-  const searchBarSelector = '.global-search'; // Adjust if necessary
-  const dropdownSelector = 'ul[aria-labelledby="project"].dropdown-menu.dropdown-menu-right'; // Refined selector
-  const appLinkSelector = 'a'; // Links inside the dropdown
-  const navContainerId = 'spinnaker-nav-container'; // Unique ID for the navigation container
+  const validURLPattern = /^https:\/\/.*\/#\/projects\/([^/]+)\/applications\/([^/]+)\/(executions|pipelines)/;
 
-  const validURLPattern = /^https:\/\/.*\/#\/projects\/.*\/applications\/([^/]+)\/executions$/;
-
-  // Retrieve the saved domain from storage
   storage.get("spinnakerDomain", (data) => {
-    const savedDomain = data && data.spinnakerDomain || (data && data["spinnakerDomain"]);
+    const savedDomain = data?.spinnakerDomain || data?.["spinnakerDomain"];
+    if (!savedDomain || !window.location.href.startsWith(savedDomain)) return;
 
-    if (!savedDomain) {
-      console.log("No Spinnaker domain configured. Exiting.");
-      return;
-    }
+    const insertNav = () => {
+      const match = window.location.href.match(validURLPattern);
+      if (!match) return;
 
-    if (!window.location.href.startsWith(savedDomain)) {
-      console.log(`Current URL does not match the saved Spinnaker domain (${savedDomain}). Exiting.`);
-      return;
-    }
+      const projectName = match[1];
+      const appName = match[2];
+      const page = match[3];
 
-    console.log(`Spinnaker domain matched: ${savedDomain}. Initializing extension...`);
-
-    // Function to add navigation arrows
-    const addNavigationArrows = () => {
-      const currentURL = window.location.href;
-
-      // Extract the application name from the current URL
-      const match = currentURL.match(validURLPattern);
-      if (!match) {
-        removeNavigationArrows();
-        return false;
-      }
-
-      // Locate the search bar
-      const searchBar = document.querySelector(searchBarSelector);
-      if (!searchBar) {
-        setTimeout(addNavigationArrows, 100); // Retry after 100ms
-        return false; // Retry later
-      }
-
-      // Locate the correct dropdown menu
-      const dropdown = document.querySelector(dropdownSelector);
+      const dropdown = document.querySelector('ul[aria-labelledby="project"].dropdown-menu.dropdown-menu-right');
       if (!dropdown) {
-        setTimeout(addNavigationArrows, 100);
-        return false; 
+        setTimeout(insertNav, 100);
+        return;
       }
 
-      // Locate all links within the dropdown
-      const applications = Array.from(dropdown.querySelectorAll(appLinkSelector));
-      if (applications.length === 0) {
-        setTimeout(addNavigationArrows, 100);
-        return false;
+      const services = Array.from(dropdown.querySelectorAll('a'));
+      if (services.length <= 2) return;
+
+      if (document.getElementById("Q-bar")) {
+        document.getElementById("Q-bar").remove(); // avoid duplicates
       }
 
-      const currentAppName = match[1];
+      const navContainer = document.createElement("div");
+      navContainer.id = "Q-bar";
+      navContainer.style.cssText = "float: right; width: auto; margin: 5px 25px; position: relative; right: 35%;";
+      navContainer.innerHTML = `
+        <ul class="nav" style="display: flex;">
+          <li class="previous Q-btn"><a id="Q-prev-btn" href="#"><span>← Previous</span></a></li>
+          <li class="Q-btn"><a id="Q-migrations-btn" href="#"><span>⚙️ Migrations</span></a></li>
+          <li class="next Q-btn"><a id="Q-next-btn" href="#"><span>Next →</span></a></li>
+        </ul>
+      `;
+      const container = document.querySelector(".project-header > .container");
+      if (container) container.appendChild(navContainer);
 
-      // Find the precise index of the current application
-      const currentIndex = applications.findIndex((app) => {
-        const appHref = new URL(app.getAttribute("href"), window.location.origin).hash;
-        const appName = appHref.match(/\/applications\/([^/]+)/)?.[1];
-        return appName === currentAppName;
+      const skip = [];
+      const migrationIndex = services.findIndex((a) => a.textContent.includes("migrate-"));
+      if (migrationIndex !== -1) skip.push(migrationIndex);
+
+      const migrationsLink = services[migrationIndex];
+      if (migrationsLink) {
+        document.getElementById("Q-migrations-btn").setAttribute("href", migrationsLink.getAttribute("href") + "/" + page);
+      } else {
+        document.getElementById("Q-migrations-btn").style.display = "none";
+      }
+
+      const currentIndex = services.findIndex(a => {
+        const hash = new URL(a.href, window.location.origin).hash;
+        const appMatch = hash.match(/\/applications\/([^/]+)/);
+        return appMatch?.[1] === appName;
       });
 
-      if (currentIndex === -1) {
-        // Current application not found in the dropdown links. Retry later.
-        return false;
-      }
+      const prevBtn = document.getElementById("Q-prev-btn");
+      const nextBtn = document.getElementById("Q-next-btn");
 
-      // Create navigation buttons
-      const navContainer = document.createElement("div");
-      navContainer.id = navContainerId; // Assign unique ID to avoid duplicates
-      navContainer.style.display = "inline-flex";
-      navContainer.style.alignItems = "center";
-      navContainer.style.marginLeft = "10px";
-
-      const prevButton = document.createElement("button");
-      prevButton.textContent = "← Previous";
-      prevButton.disabled = currentIndex <= 1;
-      prevButton.style.marginRight = "5px";
-      prevButton.style.padding = "5px 10px";
-      prevButton.style.cursor = "pointer";
-      prevButton.onclick = () => {
-        if (currentIndex > 0) {
-          const prevApplication = applications[currentIndex - 1].getAttribute("href");
-          const prevExecutionURL = prevApplication + "/executions";
-          window.location.href = prevExecutionURL;
-        }
+      const getValidIndex = (start, step) => {
+        let index = start;
+        while (skip.includes(index)) index += step;
+        return (index + services.length) % services.length;
       };
 
-      const nextButton = document.createElement("button");
-      nextButton.textContent = "Next →";
-      nextButton.disabled = currentIndex >= applications.length - 1;
-      nextButton.style.padding = "5px 10px";
-      nextButton.style.cursor = "pointer";
-      nextButton.onclick = () => {
-        if (currentIndex < applications.length - 1) {
-          const nextApplication = applications[currentIndex + 1].getAttribute("href");
-          const nextExecutionURL = nextApplication + "/executions";
-          window.location.href = nextExecutionURL;
-        }
-      };
+      if (currentIndex !== -1) {
+        const prevIndex = getValidIndex(currentIndex - 1, -1);
+        const nextIndex = getValidIndex(currentIndex + 1, 1);
 
-      removeNavigationArrows(); // Remove existing arrows if any
-      navContainer.appendChild(prevButton);
-      navContainer.appendChild(nextButton);
+        const prevHref = services[prevIndex].getAttribute("href") + "/" + page;
+        const nextHref = services[nextIndex].getAttribute("href") + "/" + page;
 
-      // Add the navigation container next to the search bar
-      searchBar.parentNode.insertBefore(navContainer, searchBar.nextSibling);
-
-      return true;
-    };
-
-    const removeNavigationArrows = () => {
-      const navContainer = document.getElementById(navContainerId);
-      if (navContainer) {
-        navContainer.remove();
+        prevBtn.setAttribute("href", prevHref);
+        nextBtn.setAttribute("href", nextHref);
       }
     };
 
-    // Monitor URL changes using MutationObserver
-    let lastURL = window.location.href;
-
-    const observer = new MutationObserver(() => {
-      const currentURL = window.location.href;
+    // Watch for DOM changes and URL changes
+    let lastURL = location.href;
+    new MutationObserver(() => {
+      const currentURL = location.href;
       if (currentURL !== lastURL) {
         lastURL = currentURL;
-        addNavigationArrows(); // Check the new URL and add/remove arrows as needed
+        insertNav();
       }
-    });
+    }).observe(document.body, { childList: true, subtree: true });
 
-    // Start observing the document for URL changes
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    // Immediately call `addNavigationArrows` to initialize on page load
-    addNavigationArrows();
+    insertNav(); // initial call
   });
 })();
