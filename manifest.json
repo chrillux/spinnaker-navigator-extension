@@ -1,10 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Spinnaker Navigation Extension",
-  "version": "1.0",
-  "description": "Adds navigation arrows to Spinnaker for easier navigation",
-  "permissions": ["storage", "activeTab"],
-  "host_permissions": ["*://spinnaker.quinyx.io/*"],
+  "version": "1.1",
+  "description": "Adding navigation arrows and migrations buttons to Spinnaker for easier navigation",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://spinnaker.quinyx.io/*"
+  ],
   "content_scripts": [
     {
       "matches": ["*://spinnaker.quinyx.io/*"],
