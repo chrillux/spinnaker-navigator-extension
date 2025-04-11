@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Spinnaker Navigation Extension",
   "version": "1.1",
-  "description": "Adding navigation arrows and migrations buttons to Spinnaker for easier navigation",
+  "description": "Adding navigation arrows and migrations button to Spinnaker for easier navigation",
   "permissions": [
     "activeTab",
     "storage"
