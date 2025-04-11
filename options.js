@@ -10,31 +10,36 @@ document.getElementById("save").addEventListener("click", () => {
     const domainInput = document.getElementById("domain");
     const domain = domainInput.value.trim();
 
-    if (!domain || !domain.startsWith("http")) {
+    if (!domain || !domain.startsWith("https://")) {
         displayStatus("Please enter a valid domain starting with https://", true);
         return;
     }
 
     // Save the domain to storage
-    storage.set({ spinnakerDomain: domain }, () => {
-        const lastError = chrome?.runtime?.lastError || browser?.runtime?.lastError;
-        if (lastError) {
-            console.error(lastError.message);
-            displayStatus("Failed to save settings. Please try again.", true);
-        } else {
-            displayStatus("Settings saved!", false); // Show success message
-            setTimeout(() => {
-                displayStatus("", false); // Clear the status message after 1.5 seconds
-                window.close(); // Close the page after 1.5 seconds
-            }, 1500);
-        }
-    });
+    try {
+        storage.set({ spinnakerDomain: domain }, () => {
+            const lastError = chrome?.runtime?.lastError || browser?.runtime?.lastError;
+            if (lastError) {
+                console.error(lastError.message);
+                displayStatus("Failed to save settings. Please try again.", true);
+            } else {
+                displayStatus("Settings saved!", false); // Show success message
+                setTimeout(() => {
+                    displayStatus("", false); // Clear the status message after 1.5 seconds
+                    window.close(); // Close the page after 1.5 seconds
+                }, 1500);
+            }
+        });
+    } catch (error) {
+        console.error("Error saving to storage:", error); 
+        displayStatus("An unexpected error occurred. Please try again.", true);
+    }
 });
 
 // Load the saved domain on page load
 if (storage) {
     storage.get("spinnakerDomain", (data) => {
-        const domain = data && data.spinnakerDomain || (data && data["spinnakerDomain"]); // Handle Firefox/Chrome format differences
+        const domain = data?.spinnakerDomain || data?.["spinnakerDomain"]; // Handle Firefox/Chrome format differences
         if (domain) {
             document.getElementById("domain").value = domain;
         }
