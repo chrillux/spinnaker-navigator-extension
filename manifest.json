@@ -19,7 +19,7 @@
   ],
   "options_page": "options.html",
   "icons": {
-    "48": "images/icon.png"
+    "48": "images/spinnaker.png"
   },
   "action": {
     "default_title": "Spinnaker Navigation Extension",
