@@ -24,7 +24,7 @@
   "action": {
     "default_title": "Spinnaker Navigation Extension",
     "default_icon": {
-      "48": "images/spinnaker.svg"
+      "48": "images/spinnaker.png"
     }
   },
   "browser_specific_settings": {
