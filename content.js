@@ -32,7 +32,7 @@
 
       // Get all service links from the dropdown
       const services = Array.from(dropdown.querySelectorAll('a'));
-      if (services.length <= 2) return; // Skip if there are not enough services
+      if (services.length <= 2) return;
 
       // Remove any existing navigation bar to avoid duplicates
       if (document.getElementById("Q-bar")) {
@@ -55,10 +55,15 @@
       const container = document.querySelector(".project-header > .container");
       if (container) container.appendChild(navContainer);
 
-      // Skip certain indices (e.g., migration links)
+      // Skip non-application links (e.g. project dashboard) and migration links
       const skip = [];
+      services.forEach((a, i) => {
+        const hash = new URL(a.href, window.location.origin).hash;
+        if (!/\/applications\//.test(hash) || a.textContent.includes("migrate-")) {
+          skip.push(i);
+        }
+      });
       const migrationIndex = services.findIndex((a) => a.textContent.includes("migrate-"));
-      if (migrationIndex !== -1) skip.push(migrationIndex);
 
       // Configure the migrations button
       const migrationsLink = services[migrationIndex];
@@ -81,9 +86,13 @@
 
       // Helper function to find the next valid index, skipping certain indices
       const getValidIndex = (start, step) => {
-      let index = start;
-      while (skip.includes(index)) index += step;
-      return (index + services.length) % services.length;
+      const len = services.length;
+      let index = ((start % len) + len) % len;
+      for (let i = 0; i < len; i++) {
+        if (!skip.includes(index)) return index;
+        index = ((index + step) % len + len) % len;
+      }
+      return index;
       };
 
       // Configure the previous and next buttons if the current index is valid
